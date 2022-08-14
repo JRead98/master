@@ -1,8 +1,8 @@
 # Model for Familiarity Recognition 
 
-Connectionnist model for Familiarity Recognition designed as part of my master's thesis
+Connectionnist model for Familiarity Recognition designed as part of my master's thesis.
 
-Les datasets utilisés pour les différentes simulations sont disponibles aux adresses suivantes :
+Dataset used for simulations are available in the following links:
 
 Caltech256 : https://www.kaggle.com/datasets/jessicali9530/caltech256 (Griffin et al., 2007)
 
@@ -10,49 +10,49 @@ Cat Dataset : https://www.kaggle.com/datasets/crawford/cat-dataset (Zhang et al.
 
 VGGFace : https://www.robots.ox.ac.uk/~vgg/data/vgg_face/ (Parkhi et al., 2015)
 
-# Conditions
+# Requirements
 
-La librairie a été testée sur Python 3.9.11
+The library was tested with python 3.9.11
 
 ```
 pip install -r requirements.txt
 ```
 
-Les librairies nécéssaires sont dans le fichier `requirements.txt`
+The required libraries are listed in the file `requirements.txt`
 
 # Arguments
 
-Les arguments suivants peuvent être modifiés :
+The following arguments can be modified in the command line:
 
-- --datapath : répertoire dans lequel se trouve le dataset
+- --datapath: path to the directory where the dataset is located
 
-- --only_jpg (défaut : False) : True pour sélectionner uniquement les fichiers .pjg
+- --only_jpg (default: False): True to select only .pjg files
 
-- --filename (défaut : simulation.csv) : nom du fichier dans lequel vont s'enregistrer les résultats des simulations 
+- --filename (default: simulation.csv): filename in which the results of the simulations will be saved
 
-- --sizes (défaut : [20, 40, 100, 200, 400, 1000, 4000, 10000]) : nombres d'images apprises pendant l'entraînement
+- --sizes (default: [20, 40, 100, 200, 400, 1000, 4000, 10000]): number of images presented during training
 
-- --lr (défaut : 0.01) : constante d'apprentissage
+- --lr (default: 0.01): learning rate
 
-- --min_weights (défaut : -1) : valeur minimum des poids à l'initialisation
+- --min_weights (default: -1): minimum value of weights at initialization
 
-- --max_weights (défaut : 1) : valeur maximum des poids à l'initialisation
+- --max_weights (default: 1): maximum value of weights at initialization
 
-- --run (défaut : 100) : nombre de fois qu'une simulation sera effectuée
+- --run (default: 100): number of runs
 
-- --learning_rule (défaut : AntiHebbian) : choix de la règle d'apprentissage
+- --learning_rule (default: AntiHebbian): selection of the memory module
 
-- --model (défaut : alexnet) : choix du module d'extraction
+- --model (default: alexnet): selection of the extraction module
 
-- --dataset (défaut : dataset) : choix du dataset utilisé
+- --dataset (default: dataset): selection of the dataset
 
-- --treshold (défaut : 0) : seuil de familiarité
+- --treshold (default: 0): familiarity treshold
 
-Ces arguments se trouvent dans le script `parsers.py`
+These arguments are listed in the script `parsers.py`
 
-# Choix du modèle
+# Selection of the model
 
-Pour utiliser le modèle Hebbien, encodez les arguments suivants lorsque vous lancez un script :
+For the Hebbian model, use the following arguments when launching a script:
 
 - --model resnet
 
@@ -60,17 +60,17 @@ Pour utiliser le modèle Hebbien, encodez les arguments suivants lorsque vous la
 
 - --lr 0.1
 
-Pour utiliser le modèle anti-Hebbien (Kazanovich & Borisyuk, 2021), laissez les arguments par défaut.
+For the anti-Hebbian model (Kazanovich & Borisyuk, 2021), leave the default arguments.
 
 # Simulation 1
 
-Pour réaliser la Simulation 1, reproduisant l'expérience de Standing (1973) :
+To perform Simulation 1 which reproduces Standing's experiment (Standing, 1973):
 
-- Sélectionnez le répertoire (--datapath) correspondant au dataset : Caltech256
+- Select the directory (--datapath) corresponding to the dataset: Caltech256
 
-- Laissez l'argument --sizes par défaut : [20, 40, 100, 200, 400, 1000, 4000, 10000]
+- Leave the default --sizes argument: [20, 40, 100, 200, 400, 1000, 4000, 10000]
 
-- Lancez le script `testing.py`
+- Launch the script `testing.py`
 
 ```
 python testing.py [arguments]
@@ -78,13 +78,13 @@ python testing.py [arguments]
 
 # Simulation 2
 
-Pour réaliser la Simulation 2, qui explore la présence des effets de récence et de primauté :
+To perform Simulation 2, which explores the presence of recency and primacy effects:
 
-- Sélectionnez le répertoire (--datapath) correspondant au dataset : Caltech256
+- Select the directory (--datapath) corresponding to the dataset: Caltech256
 
-- Utilisez l'argument --sizes désiré
+- Choose the desired --sizes argument
 
-- Lancez le script `recency.py`
+- Launch the script `recency.py`
 
 ```
 python recency.py [arguments]
@@ -92,13 +92,13 @@ python recency.py [arguments]
 
 # Simulation 3
 
-Pour réaliser la Simulation 3, qui explore la présence d'un effet de similarité :
+To perform Simulation 3, which explores the presence of a similarity effect:
 
-- Sélectionnez le répertoire (--datapath) correspondant au dataset : Cat Dataset
+- Select the directory (--datapath) corresponding to the dataset: Cat Dataset
 
-- Utilisez les arguments suivants : --only_jpg True --sizes 40
+- Use the following arguments: --only_jpg True --sizes 40
 
-- Lancez le script `testing.py`
+- Launch the script `testing.py`
 
 ```
 python testing.py [arguments]
@@ -106,43 +106,43 @@ python testing.py [arguments]
 
 # Simulation 4
 
-Pour réaliser la Simulation 4, qui explore un effet de l'orientation de la cible :
+To perform Simulation 4, which explores an effect of target orientation:
 
-- Lancez le script `downloader.py` pour télécharger le dataset VGGFace
+- Launch the script `downloader.py` to download VGGFace dataset
 
 ```
 python downloader.py
 ```
 
-- Sélectionnez le répertoire (--datapath) correspondant au dataset téléchargé via le downloader
+- Select the directory (--datapath) corresponding to the previously downloaded dataset
 
-- Utilisez l'argument --dataset faceset
+- Use the argument --dataset faceset
 
-- Lancez le script `testing.py`
+- Launch the script `testing.py`
 
 ```
 python testing.py [arguments]
 ```
 
-# Test de reconnaissance Oui-Non
+# Yes-No Recognition Task
 
-Pour réaliser un test de reconnaissance Oui-Non :
+To perform a Yes-No recognition task:
 
-- Sélectionnez le répertoire (--datapath) correspondant au dataset : Caltech256 ou Cat Dataset
+- Select the directory (--datapath) corresponding to the dataset depending on the condition, respectively dissimilar or similar: Caltech256 or Cat Dataset
 
-- Si vous réalisez la simulation sur le Cat Dataset, utilisez l'argument --only_jpg True
+- If the Cat Dataset is selected, use the argument --only_jpg True
 
-- Sélectionnez l'argument --sizes 400
+- Also use the following argument --sizes 400
 
-- Lancez le script `distribution.py`
+- Launch the script `distribution.py`
 
 ```
 python distribution.py [argmuents]
 ```
 
-- Une fois que le graphique apparait, trouvez le point d'intersection entre les deux courbes
+- Once the graph appears, find the point of intersection between the two curves
 
-- Lancez le scripts `y-n.py` avec l'argument --treshold à la valeur correspondant à cette intersection
+- Launch the script `y-n.py` with the --treshold argument set to the value correspond to this intersection
 
 ```
 python y-n.py [arguments]
