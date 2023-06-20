@@ -28,4 +28,10 @@ class Hebbian(nn.Module):
         self.lr = args.lr
 
     def forward(self, _, x):
-        return self.lr * x.repeat(x.size(dim=1), 1)*x.reshape((-1, 1))
+        xbis = x.reshape(-1)
+        y = torch.full((xbis.size(dim=0),), 0, dtype=torch.float32)
+        y[xbis > xbis.median()] = 1.0
+        w = y.repeat(x.size(dim=0), 1) * x.reshape((-1, 1))
+        return self.lr * w
+
+
