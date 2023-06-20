@@ -5,12 +5,11 @@ import torch
 import torch.utils.data
 import dataset
 import pandas as pd
-import faceset
 from learning_rule import AntiHebbian, Hebbian
 from matplotlib import pyplot as plt
 
 
-# FaRe model implementation
+# model implementation
 
 
 class Model(nn.Module):
@@ -19,7 +18,9 @@ class Model(nn.Module):
     def __init__(self, args):
         print('starting to load')
         super(Model, self).__init__()
+
         # defining CCN for feature extraction
+
         # with AlexNet
         if args.model == 'alexnet':
             # loading pre-trained CNN Alexnet
@@ -28,6 +29,7 @@ class Model(nn.Module):
             self.output = nn.Linear(4096, 4096, bias=False)
             # extracting Alexnet fc7 layer as an input for the MM
             self.features_extractor.classifier = nn.Sequential(*list(self.features_extractor.classifier.children())[:5])
+
         # with ResNet50
         elif args.model == 'resnet':
             class Identity(nn.Module):
@@ -41,8 +43,14 @@ class Model(nn.Module):
             # memory module parameters
             self.output = nn.Linear(2048, 2048, bias=False)
             self.features_extractor.fc = Identity()
+
         # initial values of connections strengths randomly distributed
         nn.init.uniform_(self.output.weight, args.min_weights, args.max_weights)
+        # plot histogram of weights distribution
+        histo = self.output.weight.numpy()
+        plt.hist(histo.flatten(), 100)
+        plt.show()
+
         # defining learning rule
         self.learning_rule = args.learning_rule
         print('model loaded')
@@ -56,11 +64,7 @@ class Model(nn.Module):
 
     # defining forward propagation
     def forward(self, x):
-        if self.learning_rule == 'AntiHebbian':
-            # applying feedforward to calculate the activity of novelty neurons
-            return torch.matmul(self.output.weight.data.T, x.squeeze())
-        elif self.learning_rule == 'Hebbian':
-            return torch.matmul(self.output.weight.data - torch.diag(self.output.weight.data), x.squeeze())
+        return torch.matmul(self.output.weight.data.T, x.squeeze())
 
     # defining backward propagation
     def mybackward(self, x):
@@ -68,22 +72,26 @@ class Model(nn.Module):
         weights = self.output.weight.data + x
         # updating weights
         self.output.weight.data = weights
+        # plot histogram of updated weights distribution
+        histo = weights.numpy()
+        plt.hist(histo.flatten(), 100)
+        plt.show()
 
     # learning loop
     def training_loop(self, dataset_size, args):
         print('training loop')
+
         # calling the learning rule from an other specific file
         if args.learning_rule == 'AntiHebbian':
             learning_function = AntiHebbian(args)
         elif args.learning_rule == 'Hebbian':
             learning_function = Hebbian(args)
+
         # defining the training set
-        if args.dataset == 'dataset':
-            data = dataset.TrainingSet(dataset_size, args)
-        elif args.dataset == 'faceset':
-            data = faceset.TrainingSet(dataset_size, args)
+        data = dataset.TrainingSet(dataset_size, args)
         # loading images
         loader = torch.utils.data.DataLoader(data, batch_size=1, shuffle=False, num_workers=4)
+
         # number of epochs
         for epoch in range(1):
             print('epoch number is', epoch)
@@ -95,10 +103,10 @@ class Model(nn.Module):
                     output = self.forward(input)
                 else:
                     output = None
-                # showing histogram of the output layer activity
-                # histo = output.numpy()
-                # plt.hist(histo.flatten(), 100)
-                # plt.show()
+                # showing histogram of the output layer distribution
+                histo = output.numpy()
+                plt.hist(histo.flatten(), 100)
+                plt.show()
                 # computing delta on the outputs
                 delta = learning_function(output, input)
                 # applying weights modification
@@ -107,22 +115,21 @@ class Model(nn.Module):
     # model accuracy
     def testing_accuracy(self, args):
         print('loading testing dataset')
+
         # defining the testing set
-        if args.dataset == 'dataset':
-            data = dataset.TestingSet(args)
-        elif args.dataset == 'faceset':
-            data = faceset.TestingSet(args)
-        print('dataset loaded')
+        data = dataset.TestingSet(args)
         # loading testing set
         loader = torch.utils.data.DataLoader(data)
         score = 0
+        print('dataset loaded')
+
         # two images are feed-forward
         for train_image, test_image in loader:
             input_train = self.extract(train_image)
             input_test = self.extract(test_image)
             output_train = self.forward(input_train).reshape(-1)
             output_test = self.forward(input_test).reshape(-1)
-            # showing output activity histograms for the two images
+            # showing histograms of output distribution for the two images
             histo_train = output_train.numpy()
             histo_test = output_test.numpy()
             fig, (ax1, ax2) = plt.subplots(1, 2)
@@ -131,6 +138,7 @@ class Model(nn.Module):
             df_train.hist(bins=100, ax=ax1)
             df_test.hist(bins=100, ax=ax2)
             plt.show()
+
             # familiarity decision function
             # computing probability for the learning image
             if args.learning_rule == 'AntiHebbian':
@@ -144,6 +152,7 @@ class Model(nn.Module):
                 dx = torch.dot(input_train.reshape(-1), output_train)
                 dz = torch.dot(input_test.reshape(-1), output_test)
                 score += 1 if dx > dz else 0
+
         # computing error probability
         print('the error probability is ', 1 - score / len(loader))
         return 1 - score / len(loader)
@@ -151,50 +160,58 @@ class Model(nn.Module):
     # compute recency
     def recency(self, args):
         print('loading testing dataset')
+        
         # defining the testing set
         data = dataset.TestingSet(args)
-        print('dataset loaded')
         # loading testing set
         loader = torch.utils.data.DataLoader(data)
         score = 0
         scores = []
+        print('dataset loaded')
+        
         # testing pairs are showed in the same order as training
         for train_image, test_image in loader:
             input_train = self.extract(train_image)
             input_test = self.extract(test_image)
             output_train = self.forward(input_train).reshape(-1)
             output_test = self.forward(input_test).reshape(-1)
+            
             # computing probability for the learning image
             if args.learning_rule == 'AntiHebbian':
                 dx = output_train[output_train > output_train.median()].sum() - output_train[output_train <= output_train.median()].sum()
-                # computing probability for the new image
+                # # computing probability for the new image
                 dz = output_test[output_test > output_test.median()].sum() - output_test[output_test <= output_test.median()].sum()
-                # familiarity recognition if dx < dz then 1
-                # error recognition if dx > dz then 0
+                # # familiarity recognition if dx < dz then 1
+                # # error recognition if dx > dz then 0
+                # dx = torch.dot(input_train.reshape(-1), output_train)
+                # dz = torch.dot(input_test.reshape(-1), output_test)
                 score += 1 if dx < dz else 0
             elif args.learning_rule == 'Hebbian':
                 dx = torch.dot(input_train.reshape(-1), output_train)
                 dz = torch.dot(input_test.reshape(-1), output_test)
                 score += 1 if dx > dz else 0
+                
             scores.append(1 - score / (len(scores) + 1))
         return np.array(scores)
 
-    # histogram
+    # histogram of d values
     def histogram(self, args):
         print('loading testing dataset')
         # defining the testing set
         data = dataset.TestingSet(args)
-        print('dataset loaded')
         # loading testing set
         loader = torch.utils.data.DataLoader(data)
         list_dx = []
         list_dz = []
+        print('dataset loaded')
+        
         # two images are feed-forward
         for train_image, test_image in loader:
             input_train = self.extract(train_image)
             input_test = self.extract(test_image)
             output_train = self.forward(input_train).reshape(-1)
             output_test = self.forward(input_test).reshape(-1)
+            
             # computing probability for the learning image
             if args.learning_rule == 'AntiHebbian':
                 dx = output_train[output_train > output_train.median()].sum() - output_train[output_train <= output_train.median()].sum()
@@ -205,37 +222,8 @@ class Model(nn.Module):
                 dz = torch.dot(input_test.reshape(-1), output_test)
             list_dx.append(dx.item())
             list_dz.append(dz.item())
+            
         # plotting distribution of familiarity scores
         df = pd.DataFrame({'dx': list_dx, 'dz': list_dz})
         df.plot.hist(bins=50, alpha=0.5)
         plt.show()
-
-    # yes/no recognition task
-    def threshold(self, args):
-        print('loading testing dataset')
-        # defining the testing set
-        data = dataset.SetThreshold(args)
-        print('dataset loaded')
-        # loading testing set
-        loader = torch.utils.data.DataLoader(data)
-        score = 0
-        for image, y in loader:
-            input = self.extract(image)
-            output = self.forward(input).reshape(-1)
-            # computing probability for the learning image
-            if args.learning_rule == 'AntiHebbian':
-                dx = output[output > output.median()].sum() - output[output <= output.median()].sum()
-                if y:
-                    score += 1 if dx < args.threshold else 0
-                else:
-                    score += 1 if dx > args.threshold else 0
-                # computing probability for the new image
-            elif args.learning_rule == 'Hebbian':
-                dx = torch.dot(input.reshape(-1), output)
-                if y:
-                    score += 1 if dx > args.threshold else 0
-                else:
-                    score += 1 if dx < args.threshold else 0
-        # computing error probability
-        print('the error probability is ', 1 - score / len(loader))
-        return 1 - score / len(loader)
